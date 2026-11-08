@@ -1,0 +1,5 @@
+libil2cpp*.so
+global-metadata*.dat
+*.bin
+*.tmp
+Dump/
