@@ -3,15 +3,30 @@ chcp 65001 >nul
 powershell -NoProfile -ExecutionPolicy Bypass -Command "$outDir = '%~dp0'.TrimEnd('\'); $s = Get-Content -LiteralPath '%~f0' -Encoding UTF8 | Select-Object -Skip 5; Invoke-Expression ($s -join \"`n\")"
 pause
 exit /b
-$ErrorActionPreference = "Stop"
+$ErrorActionPreference = "Continue"
 $pkg = "com.garena.game.kgvn"
-$adb = "$env:LOCALAPPDATA\Android\Sdk\platform-tools\adb.exe"
-if (-not (Test-Path $adb)) { $adb = "adb" }
+$adbCandidates = @(
+    (Get-Process adb -ErrorAction SilentlyContinue | Select-Object -First 1).Path,
+    (Get-Process dnplayer -ErrorAction SilentlyContinue | ForEach-Object { Join-Path (Split-Path $_.Path) "adb.exe" } | Select-Object -First 1),
+    "P:\LDPlayer\LDPlayer14\adb.exe",
+    "$env:LOCALAPPDATA\Android\Sdk\platform-tools\adb.exe"
+) | Where-Object { $_ -and (Test-Path $_) }
+$adb = if ($adbCandidates) { $adbCandidates[0] } else { "adb" }
 
-Write-Host "[*] Ket noi ADB..." -ForegroundColor Cyan
-& $adb root | Out-Null
+Write-Host "[*] Ket noi ADB ($adb)..." -ForegroundColor Cyan
+$devLines = & $adb devices | Select-String "\s+device$" | ForEach-Object { ($_.Line -split "\s+")[0] }
+$dev = ($devLines | Where-Object { $_ -like "emulator-*" } | Select-Object -First 1)
+if (-not $dev) { $dev = $devLines | Select-Object -First 1 }
+if (-not $dev) {
+    Write-Host "[!] Khong tim thay thiet bi/gia lap ADB nao dang chay!" -ForegroundColor Red
+    exit 1
+}
+Write-Host "[*] Su dung thiet bi: $dev" -ForegroundColor Cyan
+& $adb -s $dev root | Out-Null
+& $adb -s $dev wait-for-device
 
-$remoteLib = (& $adb shell "find /data/data/$pkg/files/Resources -name libil2cpp.so 2>/dev/null" | Select-Object -First 1).Trim()
+$remoteLib = (& $adb -s $dev shell "find /data/data/$pkg/files/Resources -name libil2cpp.so 2>/dev/null" | Select-Object -First 1)
+if ($remoteLib) { $remoteLib = $remoteLib.Trim() }
 if (-not $remoteLib) {
     Write-Host "[!] Khong tim thay libil2cpp.so! Hay mo game Lien Quan it nhat 1 lan." -ForegroundColor Red
     exit 1
@@ -23,8 +38,8 @@ $outLib = Join-Path $outDir "libil2cpp.so"
 $outMeta = Join-Path $outDir "global-metadata.dat"
 
 Write-Host "[*] Dang keo libil2cpp.so va global-metadata.dat ve may..." -ForegroundColor Cyan
-& $adb pull $remoteLib $outLib
-& $adb pull $remoteMeta $outMeta
+& $adb -s $dev pull $remoteLib $outLib
+& $adb -s $dev pull $remoteMeta $outMeta
 
 # Giai ma 256 bytes dau cua global-metadata.dat (0xEAB11BAF -> 0xFAB11BAF, v29)
 $metaBytes = [System.IO.File]::ReadAllBytes($outMeta)
@@ -55,13 +70,13 @@ if ($magic -eq 0xEAB11BAFL) {
 }
 
 # Lay .rodata va .text da giai ma tu RAM cua game
-$pidStr = (& $adb shell "pidof $pkg" 2>$null | Out-String).Trim()
+$pidStr = (& $adb -s $dev shell "pidof $pkg" 2>$null | Out-String).Trim()
 if (-not $pidStr) {
     Write-Host "[*] Dang mo game Lien Quan de giai ma .rodata & .text..." -ForegroundColor Yellow
-    & $adb shell "monkey -p $pkg -c android.intent.category.LAUNCHER 1" | Out-Null
+    & $adb -s $dev shell "monkey -p $pkg -c android.intent.category.LAUNCHER 1" | Out-Null
     for ($i = 0; $i -lt 15; $i++) {
         Start-Sleep -Seconds 1
-        $pidStr = (& $adb shell "pidof $pkg" 2>$null | Out-String).Trim()
+        $pidStr = (& $adb -s $dev shell "pidof $pkg" 2>$null | Out-String).Trim()
         if ($pidStr) { Start-Sleep -Seconds 5; break }
     }
 }
@@ -87,7 +102,7 @@ if ($pidStr) {
     $ph_tx = $loads[1]
     $txPageOff = [int64]([Math]::Floor($ph_tx.offset / 4096) * 4096)
     $txOffHex = "{0:x8}" -f $txPageOff
-    $maps = (& $adb shell "grep libil2cpp.so /proc/$gamePid/maps") -split "`r?`n"
+    $maps = (& $adb -s $dev shell "grep libil2cpp.so /proc/$gamePid/maps") -split "`r?`n"
     $baseAddr = [int64]0
     for ($i = 1; $i -lt $maps.Count; $i++) {
         if ($maps[$i] -match $txOffHex) {
@@ -110,12 +125,12 @@ if ($pidStr) {
         $txCnt    = [int64]([Math]::Floor(($txLen + $txPad + 65535) / 65536))
 
         Write-Host "[*] Dang giai ma .rodata & .text cua libil2cpp.so..." -ForegroundColor Cyan
-        & $adb shell "dd if=/proc/$gamePid/mem of=/data/local/tmp/ro.bin bs=65536 skip=$roSkip count=$roCnt 2>/dev/null && dd if=/proc/$gamePid/mem of=/data/local/tmp/tx.bin bs=65536 skip=$txSkip count=$txCnt 2>/dev/null"
+        & $adb -s $dev shell "toybox dd if=/proc/$gamePid/mem of=/data/local/tmp/ro.bin bs=65536 skip=$roSkip count=$roCnt 2>/dev/null && toybox dd if=/proc/$gamePid/mem of=/data/local/tmp/tx.bin bs=65536 skip=$txSkip count=$txCnt 2>/dev/null"
         $roTmp = Join-Path $outDir "ro.bin"
         $txTmp = Join-Path $outDir "tx.bin"
-        & $adb pull /data/local/tmp/ro.bin $roTmp | Out-Null
-        & $adb pull /data/local/tmp/tx.bin $txTmp | Out-Null
-        & $adb shell "rm -f /data/local/tmp/ro.bin /data/local/tmp/tx.bin" | Out-Null
+        & $adb -s $dev pull /data/local/tmp/ro.bin $roTmp | Out-Null
+        & $adb -s $dev pull /data/local/tmp/tx.bin $txTmp | Out-Null
+        & $adb -s $dev shell "rm -f /data/local/tmp/ro.bin /data/local/tmp/tx.bin" | Out-Null
 
         $roData = [System.IO.File]::ReadAllBytes($roTmp)
         $txData = [System.IO.File]::ReadAllBytes($txTmp)
