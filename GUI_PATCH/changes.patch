@@ -1,0 +1,130 @@
+diff --git a/Il2CppDumper/Forms/MainForm.xaml b/Il2CppDumper/Forms/MainForm.xaml
+index 6602182..7ab83ee 100644
+--- a/Il2CppDumper/Forms/MainForm.xaml
++++ b/Il2CppDumper/Forms/MainForm.xaml
+@@ -5,7 +5,7 @@
+         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+         xmlns:local="clr-namespace:Il2CppDumper"
+         mc:Ignorable="d"
+-        Title="Il2CppDumper GUI"
++        Title="Il2CppDumper GUI — BaoNguyen"
+         Height="526"
+         Width="724"
+         xmlns:ui="http://schemas.modernwpf.com/2019"
+@@ -307,13 +307,14 @@
+             </TabItem>
+             <TabItem Header="About">
+                 <ui:SimpleStackPanel>
++                    <TextBlock Text="Copyright © 2026 BaoNguyen" FontWeight="Bold" />
+                     <TextBlock Text="AndnixSH (GUI design)&#x0a;&#x0a;Perfare (Il2CppDumper)&#x0a;&#x0a;djkaty (Helped me fixing an issue and I used some codes from her's Il2CppInspector)&#x0a;&#x0a;T5ive (Using some of his codes)&#x0a;" />
+                     <TextBlock Text="Source code:" />
+                     <TextBlock HorizontalAlignment="Left">
+                        
+-            <Hyperlink NavigateUri="https://github.com/AndnixSH/Il2CppDumper-GUI"
++            <Hyperlink NavigateUri="https://github.com/quangbaong/AOV_APK"
+                         RequestNavigate="Hyperlink_RequestNavigate">
+-                https://github.com/AndnixSH/Il2CppDumper-GUI
++                https://github.com/quangbaong/AOV_APK
+             </Hyperlink>
+                     </TextBlock>
+                 </ui:SimpleStackPanel>
+diff --git a/Il2CppDumper/Forms/MainForm.xaml.cs b/Il2CppDumper/Forms/MainForm.xaml.cs
+index 4dc9bbc..f03ddde 100644
+--- a/Il2CppDumper/Forms/MainForm.xaml.cs
++++ b/Il2CppDumper/Forms/MainForm.xaml.cs
+@@ -119,7 +119,7 @@ namespace Il2CppDumper
+         #region Il2Cpp dumper
+         private bool Init(string il2cppPath, string metadataPath, out Metadata metadata, out Il2Cpp il2Cpp)
+         {
+-            Log("Il2cppDumper by BAONGUYEN", Brushes.Yellow);
++            Log("Il2CppDumper GUI — Copyright © 2026 BaoNguyen", Brushes.Yellow);
+             string Mach_O = "2";
+ 
+             if (!use64bitMach_O)
+@@ -319,6 +319,8 @@ namespace Il2CppDumper
+                 }
+                 Directory.SetCurrentDirectory(basePath); //Fix read-only directory permission
+             }
++            if (executor.UnresolvedDefaultValueCount > 0)
++                Log($"{executor.UnresolvedDefaultValueCount} default values could not be decoded; MetadataOffset annotations were retained instead of guessed constants.", Brushes.Orange);
+         }
+ 
+         private void Dumper(string file, string metadataPath, string outputPath)
+diff --git a/Il2CppDumper/Il2CppDumper.csproj b/Il2CppDumper/Il2CppDumper.csproj
+index 8fec54b..856a581 100644
+--- a/Il2CppDumper/Il2CppDumper.csproj
++++ b/Il2CppDumper/Il2CppDumper.csproj
+@@ -17,10 +17,11 @@
+ 		<PreBuildEvent>rem xcopy $(ProjectDir)Scripts $(ProjectDir)$(OutDir)bin /Y /I /S</PreBuildEvent>
+ 		<FileVersion>$(PackageVersion)</FileVersion>
+ 		<ApplicationManifest>app.manifest</ApplicationManifest>
+-		<Description>GUI version by AndnixSH. This is the fork of Il2CppDumper by Perfare</Description>
+-		<Copyright>Copyright © AndnixSH 2024 | Original project: Perfare 2016-2024</Copyright>
++		<Description>AOV GUI by BaoNguyen, based on Il2CppDumper by Perfare and GUI by AndnixSH.</Description>
++		<Copyright>Copyright © 2026 BaoNguyen</Copyright>
++		<Company>BaoNguyen</Company>
+ 		<Title>Il2CppDumper GUI</Title>
+-		<Authors>AndnixSH, Perfare</Authors>
++		<Authors>BaoNguyen, AndnixSH, Perfare</Authors>
+ 		<Product>Il2CppDumper</Product>
+ 		<PackageId>Il2CppDumper</PackageId>
+ 		<UseWPF>True</UseWPF>
+@@ -30,8 +31,8 @@
+ 		<ApplicationIcon>il2cppdumper_v3.0.2.ico</ApplicationIcon>
+ 	</PropertyGroup>
+ 	<PropertyGroup>
+-	  <PackageProjectUrl>https://github.com/AndnixSH/Il2CppDumper-GUI</PackageProjectUrl>
+-	  <RepositoryUrl>https://github.com/AndnixSH/Il2CppDumper-GUI</RepositoryUrl>
++	  <PackageProjectUrl>https://github.com/quangbaong/AOV_APK</PackageProjectUrl>
++	  <RepositoryUrl>https://github.com/quangbaong/AOV_APK</RepositoryUrl>
+ 	  <Version>3.0.2</Version>
+ 	  <AssemblyVersion>$(PackageVersion)</AssemblyVersion>
+ 	</PropertyGroup>
+@@ -129,4 +130,4 @@
+ 			<DependentUpon>Settings.settings</DependentUpon>
+ 		</Compile>
+ 	</ItemGroup>
+-</Project>
+\ No newline at end of file
++</Project>
+diff --git a/Il2CppDumper/Utils/Il2CppExecutor.cs b/Il2CppDumper/Utils/Il2CppExecutor.cs
+index 1b9405b..c263de7 100644
+--- a/Il2CppDumper/Utils/Il2CppExecutor.cs
++++ b/Il2CppDumper/Utils/Il2CppExecutor.cs
+@@ -323,21 +323,29 @@ namespace Il2CppDumper
+             return il2Cpp.GetSectionHelper(metadata.methodDefs.Count(x => x.methodIndex >= 0), metadata.typeDefs.Length, metadata.imageDefs.Length);
+         }
+ 
++        private readonly HashSet<long> unresolvedDefaultValues = new HashSet<long>();
++        public int UnresolvedDefaultValueCount => unresolvedDefaultValues.Count;
++
+         public bool TryGetDefaultValue(int typeIndex, int dataIndex, out object value)
+         {
+             var pointer = metadata.GetDefaultValueFromIndex(dataIndex);
+             var defaultValueType = il2Cpp.types[typeIndex];
+-            metadata.Position = pointer;
+-            if (GetConstantValueFromBlob(defaultValueType.type, metadata.Reader, out var blobValue))
++            try
+             {
+-                value = blobValue.Value;
+-                return true;
++                metadata.Position = pointer;
++                if (GetConstantValueFromBlob(defaultValueType.type, metadata.Reader, out var blobValue))
++                {
++                    value = blobValue.Value;
++                    return true;
++                }
+             }
+-            else
++            catch (Exception error) when (error.Message == "Invalid compressed integer format" ||
++                                          error is EndOfStreamException || error is ArgumentOutOfRangeException)
+             {
+-                value = pointer;
+-                return false;
++                unresolvedDefaultValues.Add(((long)typeIndex << 32) | (uint)dataIndex);
+             }
++            value = pointer;
++            return false;
+         }
+ 
+         public bool GetConstantValueFromBlob(Il2CppTypeEnum type, BinaryReader reader, out BlobValue value)

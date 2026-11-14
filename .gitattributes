@@ -1,2 +1,6 @@
 *.sh text eol=lf
 *.bat text eol=crlf
+
+# Preserve upstream scripts and unified patch context.
+GUI_PATCH/*.patch -whitespace
+Il2CppDumper_GUI/*.py -whitespace
