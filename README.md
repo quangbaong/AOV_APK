@@ -44,3 +44,9 @@ File đã được chép sẵn vào giả lập tại `/sdcard/Download/Dump_Gam
 - **Xem bằng dnSpy / ILSpy:** Mở thư mục **[DummyDll/](file:///C:/Users/Admin/Downloads/Dump_Android_64bit/Dump/DummyDll)**, kéo các file `.dll` (`Project_d.dll`, `Project.Plugins_d.dll`, `AovTdr.dll`, ...) vào **dnSpy** để tra cứu class, hàm, biến và lấy `RVA` / `Offset`.
 - **Tra cứu nhanh bằng VS Code / Notepad++:** Mở trực tiếp file **[dump.cs](file:///C:/Users/Admin/Downloads/Dump_Android_64bit/Dump/dump.cs)**.
 - **Load vào IDA Pro 64-bit:** Mở [libil2cpp.so](file:///C:/Users/Admin/Downloads/Dump_Android_64bit/libil2cpp.so) trong IDA64 -> vào `File -> Script file...` -> chọn [ida_with_struct_py3.py](file:///C:/Users/Admin/Downloads/Dump_Android_64bit/Dump/ida_with_struct_py3.py) -> chọn lần lượt [script.json](file:///C:/Users/Admin/Downloads/Dump_Android_64bit/Dump/script.json) và [il2cpp.h](file:///C:/Users/Admin/Downloads/Dump_Android_64bit/Dump/il2cpp.h).
+
+## Tool CLI portable (kèm runtime)
+
+Tải [Il2CppDumper_CLI_AOV.zip](Il2CppDumper_CLI_AOV.zip), giải nén rồi chạy `dump.cmd` với lib và metadata đã giải mã.
+Bản này giữ `MetadataOffset` khi không giải được default value để tiếp tục xuất DummyDll; không điền constant đoán.
+Xem [hướng dẫn và mã sửa fallback](CLI_PATCH/README.md). Gói chỉ có tool, không kèm dữ liệu game/dump.
