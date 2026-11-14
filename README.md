@@ -1,24 +1,24 @@
-# Dump Liên Quân Mobile — BaoNguyen
+# Il2CppDumper GUI — BaoNguyen
 
-Tool GUI Windows x64, bản quyền hiển thị **BaoNguyen**. Runtime được tích hợp sẵn.
+## Chạy bản có sẵn
 
-## Mở tool
+Mở **Start_Dumper.bat** hoặc **Il2CppDumper_GUI\Il2CppDumper GUI.exe**.
+Runtime đã tích hợp, không cần cài .NET để chạy GUI.
 
-Nhấp đúp [Start_Dumper.bat](Start_Dumper.bat), hoặc mở trực tiếp
-[Il2CppDumper GUI.exe](Il2CppDumper_GUI/Il2CppDumper%20GUI.exe).
-Nếu tải từ GitHub, tải ZIP của repo và giải nén trước khi mở tool.
+## Cấu trúc
 
-## Dump trên PC
+- **Source/**: project đầy đủ để build EXE, mở Source\Il2CppDumper.sln trong Visual Studio.
+- **Il2CppDumper_GUI/**: GUI chạy sẵn, config và các script import đi kèm.
+- **build.cmd**: build source bằng .NET 8 SDK, xuất vào Il2CppDumper_GUI.
+- **Dump_Lib_And_Metadata.bat**: lấy lib và metadata đã giải mã từ LDPlayer.
+- **Dump_GameGuardian.sh**: script lấy dữ liệu trên Android/GameGuardian.
 
-1. Mở Liên Quân trên LDPlayer và vào sảnh.
-2. Chạy [Dump_Lib_And_Metadata.bat](Dump_Lib_And_Metadata.bat) để lấy lib và metadata đã giải mã.
-3. Mở GUI, chọn libil2cpp.so, global-metadata.dat và thư mục đầu ra.
-4. Bấm **Start Dump**.
+## Dump
 
-Kết quả: DummyDll, dump.cs, il2cpp.h, script.json và stringliteral.json.
-Giá trị mặc định chưa giải được giữ bằng MetadataOffset và được báo trong log.
-DLL là stub để xem cấu trúc/địa chỉ; mã thực thi vẫn nằm trong libil2cpp.so.
+1. Mở game vào sảnh, chạy Dump_Lib_And_Metadata.bat.
+2. Mở GUI, chọn libil2cpp.so, global-metadata.dat và thư mục đầu ra.
+3. Bấm Start Dump để xuất DummyDll và các file dump.
 
-[Mã sửa GUI và hướng dẫn build](GUI_PATCH/README.md).
-Bản CLI vẫn có trong [Il2CppDumper_CLI_AOV.zip](Il2CppDumper_CLI_AOV.zip) nếu cần.
-Repo chỉ chứa tool; không kèm lib, metadata hay dữ liệu dump của game.
+Các default value chưa giải được giữ bằng MetadataOffset và được báo trong log.
+DLL là stub để xem cấu trúc/địa chỉ. Repo không chứa dữ liệu game hoặc kết quả dump.
+Bản quyền phần tùy biến: BaoNguyen. Credits và giấy phép nguồn mở nằm trong GUI/Source.

@@ -1,5 +1,16 @@
+# Game input and generated dump data
 libil2cpp*.so
 global-metadata*.dat
 *.bin
 *.tmp
-Dump/
+/Dump/
+/DummyDll/
+/dump.cs
+/il2cpp.h
+/script.json
+/stringliteral.json
+/ida_with_struct*.py
+# Source build output
+**/bin/
+**/obj/
+.vs/

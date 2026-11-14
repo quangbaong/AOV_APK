@@ -18,4 +18,4 @@ Upstream credits retained: Perfare (Il2CppDumper), AndnixSH (GUI), djkaty, T5ive
 https://github.com/Perfare/Il2CppDumper
 https://github.com/AndnixSH/Il2CppDumper-GUI
 AOV source base: https://github.com/quangbaong/Il2CppDumper_GUI_AOV
-See ../GUI_PATCH for the exact source changes and build instructions.
+See ../Source for the complete project; run ../build.cmd to build the EXE.
