@@ -324,7 +324,7 @@ local function main()
         "📂 Đã lưu tại: %s\n" ..
         "1️⃣ libil2cpp.so\n" ..
         "2️⃣ global-metadata.dat (%s)\n\n" ..
-        "👉 Chép 2 file này ra PC và bấm Start Dump trên Il2CppDumper GUI!",
+        "👉 Chép 2 file ra PC, giải mã metadata nếu cần, rồi dùng dump.cmd trong Il2CppDumper_CLI_AOV!",
         OUT_DIR, meta_status
     ))
 end

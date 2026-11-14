@@ -141,4 +141,4 @@ if ($pidStr) {
         Write-Host "[+] Da giai ma hoan tat libil2cpp.so!" -ForegroundColor Green
     }
 }
-Write-Host "`n[OK] Hoan tat! Mo Il2CppDumper GUI va bam Start Dump." -ForegroundColor Yellow
+Write-Host "`n[OK] Hoan tat! Giai nen Il2CppDumper_CLI_AOV.zip, roi chay dump.cmd voi lib va metadata." -ForegroundColor Yellow
